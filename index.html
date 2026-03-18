@@ -5,19 +5,21 @@
   <meta charset="UTF-8" />
   <title>紫砂壶定制预览</title>
   <link rel="stylesheet" href="./style.css" />
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://unpkg.com/three@0.159.0/build/three.module.js",
-      "three/examples/jsm/": "https://unpkg.com/three@0.159.0/examples/jsm/"
-    }
-  }
-  </script>
 </head>
 
 <body>
   <div id="app">
     <div id="sidebar">
+      <div class="sidebar-header">
+        <div class="theme-toggle">
+          <span class="theme-label">暗黑模式</span>
+          <label class="switch" aria-label="切换暗黑模式">
+            <input type="checkbox" id="theme-toggle" />
+            <span class="slider"></span>
+          </label>
+        </div>
+        <a class="github-btn" href="https://github.com/Zisha-Project/zisha-preview-demo" target="_blank" rel="noopener">GitHub</a>
+      </div>
       <div class="model-btns">
         <button data-model="models/model1.glb">模型 1</button>
         <button data-model="models/model2.glb">模型 2</button>
@@ -104,7 +106,11 @@
     </div>
     <div id="viewer"></div>
   </div>
-  <script type="module" src="./main.js"></script>
+  <script src="./libs/three.min.js"></script>
+  <script src="./libs/OrbitControls.js"></script>
+  <script src="./libs/GLTFLoader.js"></script>
+  <script src="./libs/DecalGeometry.js"></script>
+  <script src="./script.js"></script>
 </body>
 
 </html>
