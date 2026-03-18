@@ -1,8 +1,8 @@
 name: Deploy Pages
 
-on:
+于:
   push:
-    branches:
+    分支:
       - main
       - dev
 
