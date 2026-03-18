@@ -1,0 +1,27 @@
+name: Deploy Pages
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build
+        run: |
+          mkdir dist
+          echo "<h1>Hello from ${{ github.ref_name }}</h1>" > dist/index.html
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          destination_dir: ${{ github.ref_name == 'main' && '' || github.ref_name }}
