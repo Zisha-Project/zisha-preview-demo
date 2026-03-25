@@ -1,25 +1,66 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh" data-theme="light">
 
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>紫砂壶定制预览</title>
+  <script>
+    try {
+      document.documentElement.dataset.theme =
+        localStorage.getItem('zisha-preview-theme') === 'dark' ? 'dark' : 'light';
+    } catch (error) {
+      document.documentElement.dataset.theme = 'light';
+    }
+  </script>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
   <link rel="stylesheet" href="./style.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.159.0/build/three.module.js",
+      "three/examples/jsm/": "https://unpkg.com/three@0.159.0/examples/jsm/"
+    }
+  }
+  </script>
 </head>
 
 <body>
   <div id="app">
     <div id="sidebar">
-      <div class="sidebar-header">
-        <div class="theme-toggle">
-          <span class="theme-label">暗黑模式</span>
-          <label class="switch" aria-label="切换暗黑模式">
+      <div id="sidebar-header">
+        <div id="sidebar-brand">紫砂壶定制</div>
+        <div id="sidebar-actions">
+          <label class="theme-switch" for="theme-toggle" aria-label="切换深色模式">
             <input type="checkbox" id="theme-toggle" />
-            <span class="slider"></span>
+            <span class="theme-slider">
+              <span class="theme-icon theme-icon-sun" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <circle cx="12" cy="12" r="4"></circle>
+                  <path d="M12 2.5v2.5M12 19v2.5M4.93 4.93l1.77 1.77M17.3 17.3l1.77 1.77M2.5 12H5M19 12h2.5M4.93 19.07l1.77-1.77M17.3 6.7l1.77-1.77"></path>
+                </svg>
+              </span>
+              <span class="theme-icon theme-icon-moon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <path d="M20.1 14.2A8.7 8.7 0 0 1 9.8 3.9a8.7 8.7 0 1 0 10.3 10.3Z"></path>
+                </svg>
+              </span>
+            </span>
           </label>
+          <a
+            id="github-link"
+            href="https://github.com/Zisha-Project/zisha-preview-demo"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="打开 GitHub 仓库"
+          >
+            <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+              <path d="M12 .5a12 12 0 0 0-3.79 23.39c.6.1.82-.26.82-.58v-2.04c-3.34.73-4.04-1.42-4.04-1.42-.55-1.38-1.33-1.74-1.33-1.74-1.09-.74.08-.72.08-.72 1.2.08 1.83 1.23 1.83 1.23 1.08 1.84 2.82 1.31 3.51 1 .11-.78.42-1.31.77-1.61-2.67-.3-5.48-1.33-5.48-5.92 0-1.31.47-2.38 1.23-3.22-.12-.3-.53-1.53.12-3.19 0 0 1.01-.32 3.3 1.23a11.4 11.4 0 0 1 6 0c2.29-1.55 3.3-1.23 3.3-1.23.65 1.66.24 2.89.12 3.19.77.84 1.23 1.91 1.23 3.22 0 4.6-2.81 5.61-5.5 5.91.43.37.82 1.1.82 2.21v3.28c0 .32.22.69.83.58A12 12 0 0 0 12 .5Z"></path>
+            </svg>
+          </a>
         </div>
-        <a class="github-btn" href="https://github.com/Zisha-Project/zisha-preview-demo" target="_blank" rel="noopener">GitHub</a>
       </div>
+      <hr />
       <div class="model-btns">
         <button data-model="models/model1.glb">模型 1</button>
         <button data-model="models/model2.glb">模型 2</button>
@@ -53,19 +94,19 @@
       <div class="pattern-area">
         <div class="pattern-item">
           <button class="pattern-btn" data-pattern="patterns/A.png">纹理 梅</button>
-          <img src="patterns/A.png" alt="纹理A" class="pattern-preview" />
+          <img src="patterns/A.png" alt="纹理A" class="pattern-preview" loading="lazy" decoding="async" />
         </div>
         <div class="pattern-item">
           <button class="pattern-btn" data-pattern="patterns/B.png">纹理 兰</button>
-          <img src="patterns/B.png" alt="纹理B" class="pattern-preview" />
+          <img src="patterns/B.png" alt="纹理B" class="pattern-preview" loading="lazy" decoding="async" />
         </div>
         <div class="pattern-item">
           <button class="pattern-btn" data-pattern="patterns/C.png">纹理 竹</button>
-          <img src="patterns/C.png" alt="纹理C" class="pattern-preview" />
+          <img src="patterns/C.png" alt="纹理C" class="pattern-preview" loading="lazy" decoding="async" />
         </div>
         <div class="pattern-item">
           <button class="pattern-btn" data-pattern="patterns/D.png">纹理 菊</button>
-          <img src="patterns/D.png" alt="纹理D" class="pattern-preview" />
+          <img src="patterns/D.png" alt="纹理D" class="pattern-preview" loading="lazy" decoding="async" />
         </div>
       </div>
       <hr />
@@ -74,19 +115,19 @@
         <p>选择彩绘图案：</p>
         <div class="paint-item">
           <button class="paint-btn" data-paint="patterns/color/paint1.png">彩绘 梅</button>
-          <img src="patterns/color/paint1.png" alt="彩绘1" class="paint-preview" />
+          <img src="patterns/color/paint1.png" alt="彩绘1" class="paint-preview" loading="lazy" decoding="async" />
         </div>
         <div class="paint-item">
           <button class="paint-btn" data-paint="patterns/color/paint2.png">彩绘 兰</button>
-          <img src="patterns/color/paint2.png" alt="彩绘2" class="paint-preview" />
+          <img src="patterns/color/paint2.png" alt="彩绘2" class="paint-preview" loading="lazy" decoding="async" />
         </div>
         <div class="paint-item">
           <button class="paint-btn" data-paint="patterns/color/paint3.png">彩绘 竹</button>
-          <img src="patterns/color/paint3.png" alt="彩绘3" class="paint-preview" />
+          <img src="patterns/color/paint3.png" alt="彩绘3" class="paint-preview" loading="lazy" decoding="async" />
         </div>
         <div class="paint-item">
           <button class="paint-btn" data-paint="patterns/color/paint4.png">彩绘 菊</button>
-          <img src="patterns/color/paint4.png" alt="彩绘4" class="paint-preview" />
+          <img src="patterns/color/paint4.png" alt="彩绘4" class="paint-preview" loading="lazy" decoding="async" />
         </div>
         <!-- 如果有更多paint.png，可以添加更多item -->
       </div>
@@ -106,11 +147,7 @@
     </div>
     <div id="viewer"></div>
   </div>
-  <script src="./libs/three.min.js"></script>
-  <script src="./libs/OrbitControls.js"></script>
-  <script src="./libs/GLTFLoader.js"></script>
-  <script src="./libs/DecalGeometry.js"></script>
-  <script src="./script.js"></script>
+  <script type="module" src="./main.js"></script>
 </body>
 
 </html>
