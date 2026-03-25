@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048" viewBox="0 0 1024 1024">
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M210 820 C280 640 350 505 470 350" stroke="#22331f" stroke-width="14" />
+    <path d="M300 790 C335 610 430 450 590 290" stroke="#294227" stroke-width="18" />
+    <path d="M390 820 C440 630 575 450 765 260" stroke="#2f4b2b" stroke-width="20" />
+
+    <path d="M250 700 C335 660 415 650 500 666" stroke="#43683d" stroke-width="22" />
+    <path d="M330 635 C415 600 500 590 595 605" stroke="#43683d" stroke-width="20" />
+    <path d="M405 568 C505 535 595 527 695 544" stroke="#43683d" stroke-width="18" />
+    <path d="M470 510 C565 476 655 470 760 486" stroke="#43683d" stroke-width="16" />
+  </g>
+
+  <g stroke="#7b5e83" stroke-width="6" fill="#eadff6">
+    <g transform="translate(515 620)">
+      <ellipse rx="22" ry="13" transform="rotate(10)" />
+      <ellipse rx="20" ry="12" transform="rotate(145)" />
+      <ellipse rx="20" ry="12" transform="rotate(260)" />
+      <ellipse rx="14" ry="10" transform="translate(20 -4) rotate(60)" fill="#d6bde8" />
+      <ellipse rx="14" ry="10" transform="translate(-19 7) rotate(200)" fill="#d6bde8" />
+    </g>
+    <g transform="translate(640 520)">
+      <ellipse rx="20" ry="12" transform="rotate(15)" />
+      <ellipse rx="18" ry="11" transform="rotate(145)" />
+      <ellipse rx="18" ry="11" transform="rotate(265)" />
+      <ellipse rx="12" ry="9" transform="translate(17 -4) rotate(60)" fill="#d6bde8" />
+      <ellipse rx="12" ry="9" transform="translate(-16 7) rotate(210)" fill="#d6bde8" />
+    </g>
+    <g transform="translate(730 452)">
+      <ellipse rx="18" ry="11" transform="rotate(15)" />
+      <ellipse rx="16" ry="10" transform="rotate(145)" />
+      <ellipse rx="16" ry="10" transform="rotate(265)" />
+      <ellipse rx="10" ry="8" transform="translate(15 -3) rotate(60)" fill="#d6bde8" />
+      <ellipse rx="10" ry="8" transform="translate(-14 6) rotate(210)" fill="#d6bde8" />
+    </g>
+  </g>
+
+  <g fill="#9e1f1f">
+    <rect x="742" y="760" width="96" height="96" rx="8" opacity="0.9" />
+  </g>
+</svg>

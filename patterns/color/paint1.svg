@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048" viewBox="0 0 1024 1024">
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path
+      d="M150 790 C300 700 420 575 560 415 C650 315 742 250 875 230"
+      stroke="#2d1f18"
+      stroke-width="26"
+    />
+    <path
+      d="M420 560 C385 510 370 455 385 405"
+      stroke="#3a281f"
+      stroke-width="14"
+    />
+    <path
+      d="M560 415 C525 362 510 322 515 282"
+      stroke="#3a281f"
+      stroke-width="12"
+    />
+    <path
+      d="M690 320 C662 280 642 246 640 220"
+      stroke="#3a281f"
+      stroke-width="10"
+    />
+  </g>
+
+  <g stroke="#7a3b35" stroke-width="8">
+    <g fill="#f5d2d1">
+      <g transform="translate(360 590)">
+        <ellipse rx="30" ry="18" transform="rotate(0)" />
+        <ellipse rx="30" ry="18" transform="rotate(72)" />
+        <ellipse rx="30" ry="18" transform="rotate(144)" />
+        <ellipse rx="30" ry="18" transform="rotate(216)" />
+        <ellipse rx="30" ry="18" transform="rotate(288)" />
+        <circle r="11" fill="#f0b07a" stroke="none" />
+      </g>
+      <g transform="translate(488 485)">
+        <ellipse rx="27" ry="16" transform="rotate(0)" />
+        <ellipse rx="27" ry="16" transform="rotate(72)" />
+        <ellipse rx="27" ry="16" transform="rotate(144)" />
+        <ellipse rx="27" ry="16" transform="rotate(216)" />
+        <ellipse rx="27" ry="16" transform="rotate(288)" />
+        <circle r="10" fill="#f0b07a" stroke="none" />
+      </g>
+      <g transform="translate(622 374)">
+        <ellipse rx="25" ry="15" transform="rotate(0)" />
+        <ellipse rx="25" ry="15" transform="rotate(72)" />
+        <ellipse rx="25" ry="15" transform="rotate(144)" />
+        <ellipse rx="25" ry="15" transform="rotate(216)" />
+        <ellipse rx="25" ry="15" transform="rotate(288)" />
+        <circle r="9" fill="#f0b07a" stroke="none" />
+      </g>
+      <g transform="translate(735 298)">
+        <ellipse rx="24" ry="14" transform="rotate(0)" />
+        <ellipse rx="24" ry="14" transform="rotate(72)" />
+        <ellipse rx="24" ry="14" transform="rotate(144)" />
+        <ellipse rx="24" ry="14" transform="rotate(216)" />
+        <ellipse rx="24" ry="14" transform="rotate(288)" />
+        <circle r="8" fill="#f0b07a" stroke="none" />
+      </g>
+    </g>
+  </g>
+
+  <g fill="#9e1f1f">
+    <rect x="760" y="760" width="96" height="96" rx="8" opacity="0.9" />
+  </g>
+</svg>

@@ -27,7 +27,10 @@ const DECAL_LAYOUT = {
   heightRatio: 0.4,
   depthRatio: 1.9,
   zOffsetRatio: 0,
-  rotation: new THREE.Euler(0, Math.PI / 2, 0)
+  sideRotations: {
+    right: new THREE.Euler(0, Math.PI / 2, 0),
+    left: new THREE.Euler(0, -Math.PI / 2, 0)
+  }
 };
 
 const state = {
@@ -67,6 +70,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(container.clientWidth, container.clientHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 container.appendChild(renderer.domElement);
+const MAX_TEXTURE_ANISOTROPY = renderer.capabilities.getMaxAnisotropy();
 
 scene.add(new THREE.AmbientLight(0xffffff, 1));
 
@@ -158,8 +162,7 @@ function clearDecal() {
   }
 
   scene.remove(state.decalMesh);
-  state.decalMesh.geometry.dispose();
-  disposeMeshMaterials(state.decalMesh);
+  disposeObject3D(state.decalMesh);
   state.decalMesh = null;
 }
 
@@ -200,6 +203,20 @@ function configureTexture(texture, colorSpace) {
   texture.colorSpace = colorSpace;
   texture.wrapS = THREE.ClampToEdgeWrapping;
   texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.anisotropy = MAX_TEXTURE_ANISOTROPY;
+  texture.magFilter = THREE.LinearFilter;
+
+  const imageUrl = texture.image?.currentSrc || texture.image?.src || '';
+  const isSvg = typeof imageUrl === 'string' && imageUrl.toLowerCase().includes('.svg');
+
+  if (isSvg) {
+    texture.generateMipmaps = false;
+    texture.minFilter = THREE.LinearFilter;
+  } else {
+    texture.minFilter = THREE.LinearMipmapLinearFilter;
+  }
+
+  texture.needsUpdate = true;
   return texture;
 }
 
@@ -234,7 +251,7 @@ function getNormalMapUrl(patternUrl) {
   return patternUrl.replace(/\.png$/i, '_normal.png');
 }
 
-function getDecalTransform() {
+function getDecalTransforms() {
   state.mainMesh.updateWorldMatrix(true, false);
 
   const box = new THREE.Box3().setFromObject(state.mainMesh);
@@ -248,19 +265,23 @@ function getDecalTransform() {
     )
   );
 
-  return {
-    position: new THREE.Vector3(
-      box.max.x + size.x * DECAL_LAYOUT.projectionOffsetRatio,
-      box.min.y + size.y * DECAL_LAYOUT.verticalCenterRatio,
-      center.z + size.z * DECAL_LAYOUT.zOffsetRatio
-    ),
-    rotation: DECAL_LAYOUT.rotation,
-    size: new THREE.Vector3(
-      squareSize,
-      squareSize,
-      Math.max(1, size.x * DECAL_LAYOUT.depthRatio)
-    )
-  };
+  const baseY = box.min.y + size.y * DECAL_LAYOUT.verticalCenterRatio;
+  const baseZ = center.z + size.z * DECAL_LAYOUT.zOffsetRatio;
+  const depth = Math.max(1, size.x * DECAL_LAYOUT.depthRatio);
+  const projectionOffset = size.x * DECAL_LAYOUT.projectionOffsetRatio;
+
+  return [
+    {
+      position: new THREE.Vector3(box.max.x + projectionOffset, baseY, baseZ),
+      rotation: DECAL_LAYOUT.sideRotations.right,
+      size: new THREE.Vector3(squareSize, squareSize, depth)
+    },
+    {
+      position: new THREE.Vector3(box.min.x - projectionOffset, baseY, baseZ),
+      rotation: DECAL_LAYOUT.sideRotations.left,
+      size: new THREE.Vector3(squareSize, squareSize, depth)
+    }
+  ];
 }
 
 function buildDecalMaterial(paintTexture, normalTexture) {
@@ -343,16 +364,21 @@ async function updateDecal() {
     return;
   }
 
-  const decalTransform = getDecalTransform();
-  const decalGeometry = new DecalGeometry(
-    state.mainMesh,
-    decalTransform.position,
-    decalTransform.rotation,
-    decalTransform.size
-  );
-  const decalMaterial = buildDecalMaterial(paintTexture, normalTexture);
+  const decalGroup = new THREE.Group();
 
-  state.decalMesh = new THREE.Mesh(decalGeometry, decalMaterial);
+  getDecalTransforms().forEach((decalTransform) => {
+    const decalGeometry = new DecalGeometry(
+      state.mainMesh,
+      decalTransform.position,
+      decalTransform.rotation,
+      decalTransform.size
+    );
+    const decalMaterial = buildDecalMaterial(paintTexture, normalTexture);
+
+    decalGroup.add(new THREE.Mesh(decalGeometry, decalMaterial));
+  });
+
+  state.decalMesh = decalGroup;
   scene.add(state.decalMesh);
 }
 
