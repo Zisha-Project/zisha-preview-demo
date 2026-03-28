@@ -5,7 +5,7 @@
       <RouterLink
         class="nav-link"
         to="/"
-        active-class="nav-link--active"
+        exact-active-class="nav-link--active"
       >
         定制预览
       </RouterLink>
