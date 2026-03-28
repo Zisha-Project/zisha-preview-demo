@@ -10,6 +10,15 @@ html, body {
   height: 100%;
 }
 
+.app-layout {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+}
+
 #sidebar {
   width: 400px;
   flex: none;
@@ -27,7 +36,6 @@ html, body {
   cursor: pointer;
 }
 
-/* 颜色选择区样式 */
 .color-area {
   margin: 10px 0;
 }
@@ -83,7 +91,6 @@ html, body {
   background: attr(data-color color);
 }
 
-/* 图案预览区样式 */
 .pattern-area {
   margin-top: 10px;
 }
@@ -106,7 +113,6 @@ html, body {
   background: white;
 }
 
-/* 新增：彩绘预览区样式（复用 pattern 样式） */
 .paint-area {
   margin-top: 10px;
 }
@@ -134,12 +140,12 @@ html, body {
   background: white;
 }
 
-#viewer {
+.viewer {
   flex: 1;
   background: #eee;
+  min-height: 0;
 }
 
-/* 容量选择区样式 */
 .capacity-area {
   margin: 15px 0;
 }
@@ -174,10 +180,6 @@ html, body {
   font-weight: 500;
 }
 
-
-
-/*清除按钮样式*/
-
 .clear-btn-area {
   margin: 15px 0;
   text-align: center;
@@ -197,4 +199,191 @@ html, body {
 
 #clear-decal-btn:hover {
   background: #ff7875;
+}
+
+/* 全站布局与顶栏 */
+.site-root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.site-main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.site-header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 16px;
+  background: #f7f7f7;
+  border-bottom: 1px solid #ddd;
+  box-sizing: border-box;
+}
+
+.site-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-link {
+  padding: 6px 12px;
+  font-size: 14px;
+  color: #555;
+  text-decoration: none;
+  border-radius: 6px;
+  border: 1px solid transparent;
+}
+
+.nav-link:hover {
+  color: #333;
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.nav-link--active {
+  color: #333;
+  font-weight: 600;
+  border-color: #ddd;
+  background: #fff;
+}
+
+/* 文化介绍页 */
+.culture-page {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: #eee;
+}
+
+.culture-inner {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px 16px 32px;
+  box-sizing: border-box;
+}
+
+.culture-h1 {
+  margin: 0 0 12px;
+  font-size: 22px;
+  font-weight: 600;
+  color: #222;
+}
+
+.culture-h2 {
+  margin: 0 0 12px;
+  font-size: 17px;
+  font-weight: 600;
+  color: #333;
+}
+
+.culture-h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+}
+
+.culture-lead {
+  margin: 0 0 20px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #555;
+}
+
+.culture-section {
+  margin-bottom: 8px;
+}
+
+.culture-p {
+  margin: 0 0 12px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: #333;
+}
+
+.culture-p--muted {
+  color: #555;
+}
+
+.culture-list {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 14px;
+  line-height: 1.8;
+  color: #333;
+}
+
+.culture-hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 24px 0;
+}
+
+.culture-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.culture-card {
+  background: #f7f7f7;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+.culture-card__media {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+}
+
+.culture-card__img {
+  max-width: 100%;
+  max-height: 140px;
+  object-fit: contain;
+  display: block;
+}
+
+.culture-foot {
+  margin: 28px 0 0;
+  text-align: center;
+}
+
+.culture-back {
+  display: inline-block;
+  padding: 10px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  text-decoration: none;
+  background: #ff4d4f;
+  border-radius: 6px;
+}
+
+.culture-back:hover {
+  background: #ff7875;
+  color: #fff;
 }
