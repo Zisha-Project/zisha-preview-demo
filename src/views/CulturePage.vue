@@ -56,8 +56,22 @@
       </section>
 
       <!-- AI 助手面板 -->
-      <AIAssistant />
+      <AIAssistant 
+        ref="aiAssistantRef" 
+        v-if="showAI" 
+        @hide="hideAIAssistant"
+      />
     </div>
+
+    <!-- 悬浮唤起按钮 -->
+    <button 
+      v-if="!showAI"
+      class="ai-float-btn"
+      @click="showAIAssistant"
+      title="打开紫砂知音"
+    >
+      🤖
+    </button>
   </main>
 </template>
 
@@ -68,6 +82,8 @@ import { potTypes, textures } from '../data/cultureData.js';
 import AIAssistant from '../components/AIAssistant.vue';
 
 const route = useRoute();
+const aiAssistantRef = ref(null);
+const showAI = ref(true); // 默认显示AI助手
 
 const isPotOpen = ref(route.name === 'culture-pot-detail');
 const isTextureOpen = ref(route.name === 'culture-texture-detail');
@@ -87,4 +103,12 @@ function toggleMenu(type) {
   }
   isTextureOpen.value = !isTextureOpen.value;
 }
+
+const showAIAssistant = () => {
+  showAI.value = true;
+};
+
+const hideAIAssistant = () => {
+  showAI.value = false;
+};
 </script>

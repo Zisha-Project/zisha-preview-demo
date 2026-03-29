@@ -532,3 +532,33 @@ html, body {
     margin-top: 10px;
   }
 }
+
+/* AI 悬浮唤起按钮 */
+.ai-float-btn {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #5c3318, #8d5524);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 28px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(92, 51, 24, 0.4);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.ai-float-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(92, 51, 24, 0.5);
+}
+
+.ai-float-btn:active {
+  transform: scale(0.95);
+}

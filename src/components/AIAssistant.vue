@@ -1,13 +1,27 @@
 <template>
-  <div class="ai-assistant">
+  <div 
+    class="ai-assistant" 
+    :style="{ width: `${width}px` }"
+    ref="aiContainer"
+  >
     <!-- 标题栏 -->
-    <div class="ai-header" @click="togglePanel">
-      <div class="ai-header__info">
+    <div class="ai-header">
+      <div class="ai-header__info" @click="togglePanel">
         <span class="ai-icon">🤖</span>
         <span class="ai-title">紫砂知音</span>
         <span class="ai-subtitle">AI 文化顾问</span>
       </div>
-      <span class="ai-toggle-icon">{{ isOpen ? '▼' : '◀' }}</span>
+      
+      <div class="ai-header__actions">
+        <!-- 隐藏按钮 -->
+        <button class="ai-hide-btn" @click.stop="hidePanel" title="隐藏面板">
+          👁️
+        </button>
+        <!-- 展开/收起按钮 -->
+        <span class="ai-toggle-icon" @click.stop="togglePanel">
+          {{ isOpen ? '▼' : '◀' }}
+        </span>
+      </div>
     </div>
 
     <!-- 聊天面板 -->
@@ -69,15 +83,23 @@
         </button>
       </div>
     </div>
+
+    <!-- 拖拽手柄 -->
+    <div 
+      v-if="isOpen"
+      class="ai-resize-handle"
+      @mousedown="startResize"
+    ></div>
   </div>
 </template>
 
 <script setup>
-import { ref, nextTick, onMounted } from 'vue';
+import { ref, nextTick, onMounted, onBeforeUnmount } from 'vue';
+import { defineEmits } from 'vue';
 import { aiKnowledge, quickQuestions } from '../data/aiKnowledge.js';
 import { useAIAssistant } from '../composables/useAIAssistant.js';
 
-const isOpen = ref(false);
+const isOpen = ref(true); // 控制聊天面板是否展开
 const messages = ref([
   {
     type: 'assistant',
@@ -86,11 +108,43 @@ const messages = ref([
 ]);
 const inputMessage = ref('');
 const messagesContainer = ref(null);
+const aiContainer = ref(null);
+const width = ref(320); // 默认宽度
 
+const emit = defineEmits(['hide']);
 const { callDeepSeek, isLoading, error, hasApiKey } = useAIAssistant();
+
+let isResizing = false;
+let startX = 0;
+let startWidth = 0;
+
+// 加载保存的宽度
+const loadSavedWidth = () => {
+  const savedWidth = localStorage.getItem('aiAssistantWidth');
+  if (savedWidth) {
+    const w = parseInt(savedWidth);
+    if (w >= 240 && w <= 480) {
+      width.value = w;
+    }
+  }
+};
+
+// 保存宽度
+const saveWidth = () => {
+  localStorage.setItem('aiAssistantWidth', width.value);
+};
 
 const togglePanel = () => {
   isOpen.value = !isOpen.value;
+};
+
+const hidePanel = () => {
+  // 通过 emit 通知父组件隐藏
+  emit('hide');
+};
+
+const showAI = () => {
+  isOpen.value = true;
 };
 
 const scrollToBottom = async () => {
@@ -105,12 +159,10 @@ const addMessage = (type, content) => {
   scrollToBottom();
 };
 
-// 发送消息 - 使用真实 DeepSeek API
 const sendMessage = async () => {
   const text = inputMessage.value.trim();
   if (!text || isLoading.value) return;
 
-  // 添加用户消息
   addMessage('user', text);
   inputMessage.value = '';
 
@@ -127,32 +179,70 @@ const sendQuickQuestion = (question) => {
   sendMessage();
 };
 
-// 检查 API 配置
-const checkApiConfig = () => {
-  if (!hasApiKey) {
-    addMessage('assistant', '⚠️ 请先配置 DeepSeek API Key。\n\n请在项目根目录创建 .env 文件，并设置 VITE_DEEPSEEK_API_KEY=sk-...');
-    return false;
+// 拖拽调节宽度
+const startResize = (e) => {
+  isResizing = true;
+  startX = e.clientX;
+  startWidth = width.value;
+  
+  document.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mouseup', onMouseUp);
+};
+
+const onMouseMove = (e) => {
+  if (!isResizing) return;
+  
+  const delta = startX - e.clientX; // 向左拖动增加宽度
+  let newWidth = startWidth + delta;
+  
+  // 限制范围
+  newWidth = Math.max(240, Math.min(480, newWidth));
+  width.value = newWidth;
+};
+
+const onMouseUp = () => {
+  if (isResizing) {
+    isResizing = false;
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup', onMouseUp);
+    saveWidth();
   }
-  return true;
 };
 
 onMounted(() => {
+  loadSavedWidth();
   scrollToBottom();
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('mousemove', onMouseMove);
+  document.removeEventListener('mouseup', onMouseUp);
+});
+
+// 暴露方法给父组件
+defineExpose({
+  showAI,
+  hidePanel
 });
 </script>
 
 <style scoped>
 .ai-assistant {
-  width: 320px;
+  position: relative;
   border-left: 1px solid #e5e5e5;
   background: white;
   display: flex;
   flex-direction: column;
-  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.08);
+  box-shadow: -2px 0 12px rgba(0, 0, 0, 0.1);
+  transition: width 0.1s ease;
+  min-width: 240px;
+  max-width: 480px;
+  height: 100%;
+  overflow: hidden;
 }
 
 .ai-header {
-  padding: 16px;
+  padding: 14px 16px;
   background: linear-gradient(135deg, #5c3318, #8d5524);
   color: white;
   display: flex;
@@ -160,8 +250,8 @@ onMounted(() => {
   justify-content: space-between;
   cursor: pointer;
   user-select: none;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-  transition: all 0.2s ease;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+  flex-shrink: 0;
 }
 
 .ai-header:hover {
@@ -172,6 +262,13 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex: 1;
+}
+
+.ai-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .ai-icon {
@@ -188,9 +285,31 @@ onMounted(() => {
   opacity: 0.85;
 }
 
+.ai-hide-btn {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.85);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.ai-hide-btn:hover {
+  background: rgba(255,255,255,0.15);
+  color: white;
+}
+
 .ai-toggle-icon {
   font-size: 18px;
+  padding: 4px 6px;
+  border-radius: 4px;
   transition: transform 0.2s;
+}
+
+.ai-toggle-icon:hover {
+  background: rgba(255,255,255,0.15);
 }
 
 .ai-panel {
@@ -198,6 +317,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  overflow: hidden;
 }
 
 .ai-messages {
@@ -217,9 +337,9 @@ onMounted(() => {
 }
 
 .ai-message.user {
-    margin-left: auto;
-    flex-direction: row-reverse;
-  }
+  margin-left: auto;
+  flex-direction: row-reverse;
+}
 
 .ai-message__avatar {
   width: 28px;
@@ -254,11 +374,6 @@ onMounted(() => {
   font-size: 13px;
 }
 
-.dots {
-  display: inline-block;
-  animation: dots 1.5s infinite;
-}
-
 .ai-quick-questions {
   padding: 12px 16px;
   background: white;
@@ -276,7 +391,6 @@ onMounted(() => {
   border-radius: 20px;
   cursor: pointer;
   transition: all 0.2s;
-  white-space: nowrap;
 }
 
 .quick-btn:hover {
@@ -313,9 +427,10 @@ onMounted(() => {
   border-radius: 20px;
   cursor: pointer;
   font-size: 14px;
+  flex-shrink: 0;
 }
 
-.ai-send-btn:hover {
+.ai-send-btn:hover:not(:disabled) {
   background: #5c3318;
 }
 
@@ -324,10 +439,39 @@ onMounted(() => {
   cursor: not-allowed;
 }
 
-@keyframes dots {
-  0%, 20% { content: '.'; }
-  40% { content: '..'; }
-  60% { content: '...'; }
-  80%, 100% { content: ''; }
+/* 拖拽手柄 */
+.ai-resize-handle {
+  position: absolute;
+  top: 0;
+  left: -4px;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
+  background: transparent;
+  transition: background 0.2s;
+}
+
+.ai-resize-handle:hover,
+.ai-resize-handle:active {
+  background: rgba(140, 85, 36, 0.3);
+}
+
+.ai-resize-handle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 3px;
+  height: 60px;
+  background: #8d5524;
+  opacity: 0.3;
+  border-radius: 3px;
+}
+
+.ai-resize-handle:hover::after,
+.ai-resize-handle:active::after {
+  opacity: 0.6;
 }
 </style>
