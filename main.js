@@ -209,12 +209,14 @@ function configureTexture(texture, colorSpace) {
   const imageUrl = texture.image?.currentSrc || texture.image?.src || '';
   const isSvg = typeof imageUrl === 'string' && imageUrl.toLowerCase().includes('.svg');
 
-  if (isSvg) {
-    texture.generateMipmaps = false;
-    texture.minFilter = THREE.LinearFilter;
-  } else {
-    texture.minFilter = THREE.LinearMipmapLinearFilter;
-  }
+  // if (isSvg) {
+  //   texture.generateMipmaps = false;
+  //   texture.minFilter = THREE.LinearFilter;
+  // } else {
+  //   texture.minFilter = THREE.LinearMipmapLinearFilter;
+  // }
+
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
 
   texture.needsUpdate = true;
   return texture;
