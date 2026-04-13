@@ -570,7 +570,8 @@ body.sidebar-collapsed:not(.is-mobile) #sidebar > * {
   }
 
   body.is-mobile:not(.sidebar-open) #sidebar {
-    transform: translateY(calc(100% - var(--mobile-toggle-height)));
+    transform: translateY(100%);
+    box-shadow: none;
   }
 
   body.is-mobile:not(.sidebar-open) #sidebar > * {
