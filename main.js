@@ -51,11 +51,11 @@ const SCENE_LAYOUTS = {
     cameraFov: 52,
     cameraPosition: new THREE.Vector3(20.5, 6.4, 0),
     controlTarget: new THREE.Vector3(0, -0.45, 0),
-    modelPosition: new THREE.Vector3(0, -4.2, 0),
-    modelTargetSize: 9.6,
+    modelPosition: new THREE.Vector3(0, -3.2, 0),
+    modelTargetSize: 7.2,
     frameOffset: {
       x: 0,
-      y: 0.16
+      y: 0.28
     },
     distanceLimits: {
       min: 12,
@@ -88,7 +88,7 @@ const state = {
   decalUpdateToken: 0,
   sidebarCollapsed: false,
   isMobileLayout: MOBILE_LAYOUT_QUERY.matches,
-  sidebarOpen: !MOBILE_LAYOUT_QUERY.matches,
+  sidebarOpen: true,
   sceneLayoutKey: MOBILE_LAYOUT_QUERY.matches ? 'mobile' : 'desktopExpanded'
 };
 
@@ -156,6 +156,10 @@ function getSceneBackgroundColor(theme) {
   return theme === THEMES.dark ? 0x181411 : 0xf0f0f0;
 }
 
+function renderScene() {
+  renderer.render(scene, camera);
+}
+
 function readSidebarPreference() {
   try {
     return localStorage.getItem(SIDEBAR_STORAGE_KEY) === 'true';
@@ -193,7 +197,7 @@ function applyTheme(theme) {
   }
 
   saveThemePreference(nextTheme);
-  renderer.render(scene, camera);
+  renderScene();
 }
 
 function getSceneLayoutKey() {
@@ -222,7 +226,10 @@ function applyCameraFraming(layout, width, height) {
 
   if (!offsetXRatio && !offsetYRatio) {
     camera.clearViewOffset();
-    return;
+    return {
+      aspectWidth: width,
+      aspectHeight: height
+    };
   }
 
   const offsetX = Math.round(width * offsetXRatio);
@@ -233,6 +240,11 @@ function applyCameraFraming(layout, width, height) {
   const viewY = offsetY;
 
   camera.setViewOffset(fullWidth, fullHeight, viewX, viewY, width, height);
+
+  return {
+    aspectWidth: fullWidth,
+    aspectHeight: fullHeight
+  };
 }
 
 function refreshSceneLayout(options = {}) {
@@ -252,13 +264,6 @@ function refreshSceneLayout(options = {}) {
   }
 
   state.sceneLayoutKey = layoutKey;
-}
-
-function stopResizeSync() {
-  if (resizeSyncFrameId) {
-    cancelAnimationFrame(resizeSyncFrameId);
-    resizeSyncFrameId = 0;
-  }
 }
 
 function syncResizeLoop() {
@@ -350,11 +355,13 @@ function syncResponsiveLayout() {
 
   if (nextIsMobileLayout !== state.isMobileLayout) {
     state.isMobileLayout = nextIsMobileLayout;
-    state.sidebarOpen = nextIsMobileLayout ? false : true;
+    state.sidebarOpen = true;
   } else {
     state.isMobileLayout = nextIsMobileLayout;
 
     if (!nextIsMobileLayout) {
+      state.sidebarOpen = true;
+    } else if (state.sceneLayoutKey !== 'mobile') {
       state.sidebarOpen = true;
     }
   }
@@ -822,19 +829,20 @@ capacityInput.addEventListener('input', () => {
 function animate() {
   requestAnimationFrame(animate);
   controls.update();
-  renderer.render(scene, camera);
+  renderScene();
 }
 
 function handleResize() {
   const nextWidth = Math.max(container.clientWidth, 1);
   const nextHeight = Math.max(container.clientHeight, 1);
   const activeLayout = SCENE_LAYOUTS[state.sceneLayoutKey];
+  const framingMetrics = applyCameraFraming(activeLayout, nextWidth, nextHeight);
 
-  camera.aspect = nextWidth / nextHeight;
-  applyCameraFraming(activeLayout, nextWidth, nextHeight);
+  camera.aspect = framingMetrics.aspectWidth / framingMetrics.aspectHeight;
   camera.updateProjectionMatrix();
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(nextWidth, nextHeight, false);
+  renderScene();
 }
 
 window.addEventListener('resize', handleResize);
@@ -844,6 +852,12 @@ window.addEventListener('resize', () => {
 window.addEventListener('orientationchange', () => {
   requestResizeSync(700);
 });
+
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', () => {
+    requestResizeSync(700);
+  });
+}
 
 if (typeof MOBILE_LAYOUT_QUERY.addEventListener === 'function') {
   MOBILE_LAYOUT_QUERY.addEventListener('change', syncResponsiveLayout);
