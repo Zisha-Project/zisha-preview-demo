@@ -5,20 +5,63 @@ import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 
 const DEFAULT_MODEL_URL = 'models/model1.glb';
 const THEME_STORAGE_KEY = 'zisha-preview-theme';
+const SIDEBAR_STORAGE_KEY = 'zisha-preview-sidebar-collapsed';
 const THEMES = {
   light: 'light',
   dark: 'dark'
 };
+const MOBILE_LAYOUT_QUERY = window.matchMedia('(max-width: 900px)');
 const CAPACITY_LIMITS = {
   min: 100,
   max: 500,
   step: 10
 };
-const MODEL_TARGET_SIZE = 12;
-const INITIAL_CAMERA_POSITION = new THREE.Vector3(15, 5, 0);
-const CONTROL_DISTANCE_LIMITS = {
-  min: 8,
-  max: 30
+const SCENE_LAYOUTS = {
+  desktopExpanded: {
+    cameraFov: 45,
+    cameraPosition: new THREE.Vector3(16.2, 5.4, 0),
+    controlTarget: new THREE.Vector3(2.4, -0.3, 0),
+    modelPosition: new THREE.Vector3(2.7, -5, 0),
+    modelTargetSize: 12,
+    frameOffset: {
+      x: 0.26,
+      y: 0
+    },
+    distanceLimits: {
+      min: 8,
+      max: 30
+    }
+  },
+  desktopCollapsed: {
+    cameraFov: 45,
+    cameraPosition: new THREE.Vector3(15, 5, 0),
+    controlTarget: new THREE.Vector3(0.35, -0.3, 0),
+    modelPosition: new THREE.Vector3(0.55, -5, 0),
+    modelTargetSize: 12,
+    frameOffset: {
+      x: 0,
+      y: 0
+    },
+    distanceLimits: {
+      min: 8,
+      max: 30
+    }
+  },
+  mobile: {
+    cameraFov: 52,
+    cameraPosition: new THREE.Vector3(20.5, 6.4, 0),
+    controlTarget: new THREE.Vector3(0, -0.45, 0),
+    modelPosition: new THREE.Vector3(0, -4.2, 0),
+    modelTargetSize: 9.6,
+    frameOffset: {
+      x: 0,
+      y: 0.16
+    },
+    distanceLimits: {
+      min: 12,
+      max: 40
+    }
+  }
 };
 const DECAL_LAYOUT = {
   projectionOffsetRatio: 0.08,
@@ -42,32 +85,44 @@ const state = {
   currentCapacity: 300,
   theme: document.documentElement.dataset.theme === THEMES.dark ? THEMES.dark : THEMES.light,
   modelLoadToken: 0,
-  decalUpdateToken: 0
+  decalUpdateToken: 0,
+  sidebarCollapsed: false,
+  isMobileLayout: MOBILE_LAYOUT_QUERY.matches,
+  sidebarOpen: !MOBILE_LAYOUT_QUERY.matches,
+  sceneLayoutKey: MOBILE_LAYOUT_QUERY.matches ? 'mobile' : 'desktopExpanded'
 };
 
 const textureCache = new Map();
 
+const app = document.getElementById('app');
+const sidebar = document.getElementById('sidebar');
 const container = document.getElementById('viewer');
 const capacityInput = document.getElementById('capacity-input');
 const capacityDisplay = document.getElementById('capacity-display');
 const clearDecalButton = document.getElementById('clear-decal-btn');
 const themeToggle = document.getElementById('theme-toggle');
+const sidebarToggle = document.getElementById('sidebar-toggle');
+const initialViewerWidth = Math.max(container.clientWidth, 1);
+const initialViewerHeight = Math.max(container.clientHeight, 1);
+const initialSceneLayout = SCENE_LAYOUTS[state.sceneLayoutKey];
+let resizeSyncFrameId = 0;
+let resizeSyncUntil = 0;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(getSceneBackgroundColor(state.theme));
 
 const camera = new THREE.PerspectiveCamera(
-  45,
-  container.clientWidth / container.clientHeight,
+  initialSceneLayout.cameraFov,
+  initialViewerWidth / initialViewerHeight,
   0.1,
   200
 );
-camera.position.copy(INITIAL_CAMERA_POSITION);
-camera.lookAt(0, 0, 0);
+camera.position.copy(initialSceneLayout.cameraPosition);
+camera.lookAt(initialSceneLayout.controlTarget);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(container.clientWidth, container.clientHeight);
+renderer.setSize(initialViewerWidth, initialViewerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 container.appendChild(renderer.domElement);
 const MAX_TEXTURE_ANISOTROPY = renderer.capabilities.getMaxAnisotropy();
@@ -90,9 +145,9 @@ scene.add(new THREE.AxesHelper(15));
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
-controls.target.set(0, 0, 0);
-controls.minDistance = CONTROL_DISTANCE_LIMITS.min;
-controls.maxDistance = CONTROL_DISTANCE_LIMITS.max;
+controls.target.copy(initialSceneLayout.controlTarget);
+controls.minDistance = initialSceneLayout.distanceLimits.min;
+controls.maxDistance = initialSceneLayout.distanceLimits.max;
 
 const gltfLoader = new GLTFLoader();
 const textureLoader = new THREE.TextureLoader();
@@ -101,11 +156,28 @@ function getSceneBackgroundColor(theme) {
   return theme === THEMES.dark ? 0x181411 : 0xf0f0f0;
 }
 
+function readSidebarPreference() {
+  try {
+    return localStorage.getItem(SIDEBAR_STORAGE_KEY) === 'true';
+  } catch (error) {
+    console.warn('侧栏偏好读取失败', error);
+    return false;
+  }
+}
+
 function saveThemePreference(theme) {
   try {
     localStorage.setItem(THEME_STORAGE_KEY, theme);
   } catch (error) {
     console.warn('主题偏好保存失败', error);
+  }
+}
+
+function saveSidebarPreference(isCollapsed) {
+  try {
+    localStorage.setItem(SIDEBAR_STORAGE_KEY, String(isCollapsed));
+  } catch (error) {
+    console.warn('侧栏偏好保存失败', error);
   }
 }
 
@@ -122,6 +194,172 @@ function applyTheme(theme) {
 
   saveThemePreference(nextTheme);
   renderer.render(scene, camera);
+}
+
+function getSceneLayoutKey() {
+  if (state.isMobileLayout) {
+    return 'mobile';
+  }
+
+  return state.sidebarCollapsed ? 'desktopCollapsed' : 'desktopExpanded';
+}
+
+function applyCameraLayout(layout) {
+  camera.fov = layout.cameraFov;
+  camera.position.copy(layout.cameraPosition);
+  camera.lookAt(layout.controlTarget);
+  camera.updateProjectionMatrix();
+
+  controls.target.copy(layout.controlTarget);
+  controls.minDistance = layout.distanceLimits.min;
+  controls.maxDistance = layout.distanceLimits.max;
+  controls.update();
+}
+
+function applyCameraFraming(layout, width, height) {
+  const offsetXRatio = Math.max(layout.frameOffset?.x ?? 0, 0);
+  const offsetYRatio = Math.max(layout.frameOffset?.y ?? 0, 0);
+
+  if (!offsetXRatio && !offsetYRatio) {
+    camera.clearViewOffset();
+    return;
+  }
+
+  const offsetX = Math.round(width * offsetXRatio);
+  const offsetY = Math.round(height * offsetYRatio);
+  const fullWidth = width + offsetX;
+  const fullHeight = height + offsetY;
+  const viewX = 0;
+  const viewY = offsetY;
+
+  camera.setViewOffset(fullWidth, fullHeight, viewX, viewY, width, height);
+}
+
+function refreshSceneLayout(options = {}) {
+  const { force = false } = options;
+  const layoutKey = getSceneLayoutKey();
+  const layout = SCENE_LAYOUTS[layoutKey];
+  const hasLayoutChanged = force || layoutKey !== state.sceneLayoutKey;
+
+  if (hasLayoutChanged) {
+    applyCameraLayout(layout);
+
+    if (state.currentModel) {
+      scaleModelToTarget(state.currentModel, layout.modelTargetSize);
+      state.currentModel.position.copy(layout.modelPosition);
+      updateDecal();
+    }
+  }
+
+  state.sceneLayoutKey = layoutKey;
+}
+
+function stopResizeSync() {
+  if (resizeSyncFrameId) {
+    cancelAnimationFrame(resizeSyncFrameId);
+    resizeSyncFrameId = 0;
+  }
+}
+
+function syncResizeLoop() {
+  handleResize();
+
+  if (performance.now() < resizeSyncUntil) {
+    resizeSyncFrameId = requestAnimationFrame(syncResizeLoop);
+    return;
+  }
+
+  resizeSyncFrameId = 0;
+}
+
+function requestResizeSync(duration = 420) {
+  resizeSyncUntil = performance.now() + duration;
+
+  if (!resizeSyncFrameId) {
+    resizeSyncFrameId = requestAnimationFrame(syncResizeLoop);
+  }
+}
+
+function updateSidebarControls() {
+  const isSidebarExpanded = state.isMobileLayout ? state.sidebarOpen : !state.sidebarCollapsed;
+  const toggleLabel = state.isMobileLayout
+    ? (state.sidebarOpen ? '关闭侧栏' : '打开侧栏')
+    : (state.sidebarCollapsed ? '展开侧栏' : '收起侧栏');
+  const toggleArrow = state.isMobileLayout
+    ? (isSidebarExpanded ? 'v' : '^')
+    : (isSidebarExpanded ? '<' : '>');
+
+  app?.classList.toggle('is-mobile', state.isMobileLayout);
+  app?.classList.toggle('sidebar-open', state.isMobileLayout ? state.sidebarOpen : !state.sidebarCollapsed);
+
+  document.body.classList.toggle('is-mobile', state.isMobileLayout);
+  document.body.classList.toggle('sidebar-open', state.isMobileLayout ? state.sidebarOpen : !state.sidebarCollapsed);
+  document.body.classList.toggle('sidebar-collapsed', !state.isMobileLayout && state.sidebarCollapsed);
+
+  if (sidebar) {
+    sidebar.setAttribute('aria-hidden', String(!isSidebarExpanded));
+
+    if (isSidebarExpanded) {
+      sidebar.removeAttribute('inert');
+    } else {
+      sidebar.setAttribute('inert', '');
+    }
+  }
+
+  if (sidebarToggle) {
+    sidebarToggle.textContent = toggleArrow;
+    sidebarToggle.setAttribute('aria-label', toggleLabel);
+    sidebarToggle.setAttribute('aria-expanded', String(isSidebarExpanded));
+    sidebarToggle.dataset.state = isSidebarExpanded ? 'expanded' : 'collapsed';
+  }
+
+  refreshSceneLayout();
+  requestResizeSync();
+
+  requestAnimationFrame(() => {
+    handleResize();
+  });
+}
+
+function closeSidebar() {
+  if (state.isMobileLayout) {
+    state.sidebarOpen = false;
+    updateSidebarControls();
+    return;
+  }
+
+  state.sidebarCollapsed = true;
+  saveSidebarPreference(true);
+  updateSidebarControls();
+}
+
+function toggleSidebar() {
+  if (state.isMobileLayout) {
+    state.sidebarOpen = !state.sidebarOpen;
+    updateSidebarControls();
+    return;
+  }
+
+  state.sidebarCollapsed = !state.sidebarCollapsed;
+  saveSidebarPreference(state.sidebarCollapsed);
+  updateSidebarControls();
+}
+
+function syncResponsiveLayout() {
+  const nextIsMobileLayout = MOBILE_LAYOUT_QUERY.matches;
+
+  if (nextIsMobileLayout !== state.isMobileLayout) {
+    state.isMobileLayout = nextIsMobileLayout;
+    state.sidebarOpen = nextIsMobileLayout ? false : true;
+  } else {
+    state.isMobileLayout = nextIsMobileLayout;
+
+    if (!nextIsMobileLayout) {
+      state.sidebarOpen = true;
+    }
+  }
+
+  updateSidebarControls();
 }
 
 function getMeshMaterials(mesh) {
@@ -190,11 +428,12 @@ function findFirstMesh(root) {
   return firstMesh;
 }
 
-function scaleModelToTarget(model) {
+function scaleModelToTarget(model, targetSize) {
+  model.scale.setScalar(1);
   const box = new THREE.Box3().setFromObject(model);
   const size = box.getSize(new THREE.Vector3());
   const maxDimension = Math.max(size.x, size.y, size.z) || 1;
-  const scale = MODEL_TARGET_SIZE / maxDimension;
+  const scale = targetSize / maxDimension;
 
   model.scale.setScalar(scale);
 }
@@ -458,15 +697,12 @@ function loadModel(url) {
       }
 
       const model = gltf.scene;
-      scaleModelToTarget(model);
-      model.position.set(0, -5, 0);
 
       state.currentModel = model;
       state.mainMesh = findFirstMesh(model);
 
       scene.add(model);
-      controls.update();
-      updateDecal();
+      refreshSceneLayout({ force: true });
     },
     undefined,
     (error) => {
@@ -550,12 +786,23 @@ clearDecalButton?.addEventListener('click', () => {
   updateDecal();
 });
 
+sidebarToggle?.addEventListener('click', toggleSidebar);
+
 themeToggle?.addEventListener('change', (event) => {
   applyTheme(event.target.checked ? THEMES.dark : THEMES.light);
 });
 
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && state.isMobileLayout && state.sidebarOpen) {
+    closeSidebar();
+  }
+});
+
+state.sidebarCollapsed = readSidebarPreference();
+
 updateCapacityDisplay();
 applyTheme(state.theme);
+syncResponsiveLayout();
 
 capacityInput.addEventListener('blur', () => {
   validateAndSetCapacity(capacityInput.value);
@@ -579,13 +826,45 @@ function animate() {
 }
 
 function handleResize() {
-  camera.aspect = container.clientWidth / container.clientHeight;
+  const nextWidth = Math.max(container.clientWidth, 1);
+  const nextHeight = Math.max(container.clientHeight, 1);
+  const activeLayout = SCENE_LAYOUTS[state.sceneLayoutKey];
+
+  camera.aspect = nextWidth / nextHeight;
+  applyCameraFraming(activeLayout, nextWidth, nextHeight);
   camera.updateProjectionMatrix();
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.setSize(nextWidth, nextHeight, false);
 }
 
 window.addEventListener('resize', handleResize);
+window.addEventListener('resize', () => {
+  requestResizeSync(520);
+});
+window.addEventListener('orientationchange', () => {
+  requestResizeSync(700);
+});
+
+if (typeof MOBILE_LAYOUT_QUERY.addEventListener === 'function') {
+  MOBILE_LAYOUT_QUERY.addEventListener('change', syncResponsiveLayout);
+} else if (typeof MOBILE_LAYOUT_QUERY.addListener === 'function') {
+  MOBILE_LAYOUT_QUERY.addListener(syncResponsiveLayout);
+}
+
+if (typeof ResizeObserver === 'function') {
+  const viewerResizeObserver = new ResizeObserver(() => {
+    handleResize();
+  });
+
+  viewerResizeObserver.observe(container);
+}
+
+sidebar?.addEventListener('transitionrun', () => {
+  requestResizeSync();
+});
+sidebar?.addEventListener('transitionend', () => {
+  requestResizeSync(180);
+});
 
 animate();
 loadModel(DEFAULT_MODEL_URL);
