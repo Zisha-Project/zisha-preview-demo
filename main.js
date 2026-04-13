@@ -141,7 +141,9 @@ const pointLight = new THREE.PointLight(0xffffff, 2);
 pointLight.position.set(10, 10, 10);
 scene.add(pointLight);
 
-scene.add(new THREE.AxesHelper(15));
+const axesHelper = new THREE.AxesHelper(15);
+axesHelper.visible = false;
+scene.add(axesHelper);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -158,6 +160,20 @@ function getSceneBackgroundColor(theme) {
 
 function renderScene() {
   renderer.render(scene, camera);
+}
+
+function updateAxesHelperPosition() {
+  if (!state.currentModel) {
+    axesHelper.visible = false;
+    axesHelper.position.set(0, 0, 0);
+    return;
+  }
+
+  const modelBox = new THREE.Box3().setFromObject(state.currentModel);
+  const modelCenter = modelBox.getCenter(new THREE.Vector3());
+
+  axesHelper.visible = true;
+  axesHelper.position.copy(modelCenter);
 }
 
 function readSidebarPreference() {
@@ -259,6 +275,7 @@ function refreshSceneLayout(options = {}) {
     if (state.currentModel) {
       scaleModelToTarget(state.currentModel, layout.modelTargetSize);
       state.currentModel.position.copy(layout.modelPosition);
+      updateAxesHelperPosition();
       updateDecal();
     }
   }
@@ -414,6 +431,7 @@ function clearDecal() {
 function clearModel() {
   if (!state.currentModel) {
     state.mainMesh = null;
+    updateAxesHelperPosition();
     return;
   }
 
@@ -421,6 +439,7 @@ function clearModel() {
   disposeObject3D(state.currentModel);
   state.currentModel = null;
   state.mainMesh = null;
+  updateAxesHelperPosition();
 }
 
 function findFirstMesh(root) {
