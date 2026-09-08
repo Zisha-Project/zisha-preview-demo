@@ -343,7 +343,8 @@ body.sidebar-collapsed:not(.is-mobile) #sidebar > * {
 
 .model-btns button,
 .pattern-btn,
-.paint-btn {
+.paint-btn,
+.decal-side-btn {
   border: 1px solid var(--button-border);
   border-radius: 10px;
   background: var(--button-bg);
@@ -353,10 +354,14 @@ body.sidebar-collapsed:not(.is-mobile) #sidebar > * {
 
 .model-btns button:hover,
 .pattern-btn:hover,
-.paint-btn:hover {
+.paint-btn:hover,
+.decal-side-btn:hover {
   background: var(--button-hover);
   transform: translateY(-1px);
 }
+
+.decal-side-btn { padding: 7px 10px; margin: 0 6px 10px 0; cursor: pointer; }
+.decal-side-btn.is-selected { background: var(--button-hover); border-color: var(--focus-ring); }
 
 .model-btns button {
   width: 100%;

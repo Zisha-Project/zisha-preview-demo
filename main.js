@@ -66,9 +66,9 @@ const SCENE_LAYOUTS = {
 const DECAL_LAYOUT = {
   projectionOffsetRatio: 0.08,
   verticalCenterRatio: 0.45,
-  widthRatio: 0.48,
+  widthRatio: 0.4,
   heightRatio: 0.4,
-  depthRatio: 1.9,
+  depthRatio: 1.2,
   zOffsetRatio: 0,
   sideRotations: {
     right: new THREE.Euler(0, Math.PI / 2, 0),
@@ -82,6 +82,7 @@ const state = {
   decalMesh: null,
   currentPatternUrl: null,
   currentPaintUrl: null,
+  decalSides: { pattern: { left: true, right: true }, paint: { left: true, right: true } },
   currentCapacity: 300,
   theme: document.documentElement.dataset.theme === THEMES.dark ? THEMES.dark : THEMES.light,
   modelLoadToken: 0,
@@ -141,9 +142,7 @@ const pointLight = new THREE.PointLight(0xffffff, 2);
 pointLight.position.set(10, 10, 10);
 scene.add(pointLight);
 
-const axesHelper = new THREE.AxesHelper(15);
-axesHelper.visible = false;
-scene.add(axesHelper);
+scene.add(new THREE.AxesHelper(15));
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -160,20 +159,6 @@ function getSceneBackgroundColor(theme) {
 
 function renderScene() {
   renderer.render(scene, camera);
-}
-
-function updateAxesHelperPosition() {
-  if (!state.currentModel) {
-    axesHelper.visible = false;
-    axesHelper.position.set(0, 0, 0);
-    return;
-  }
-
-  const modelBox = new THREE.Box3().setFromObject(state.currentModel);
-  const modelCenter = modelBox.getCenter(new THREE.Vector3());
-
-  axesHelper.visible = true;
-  axesHelper.position.copy(modelCenter);
 }
 
 function readSidebarPreference() {
@@ -275,7 +260,6 @@ function refreshSceneLayout(options = {}) {
     if (state.currentModel) {
       scaleModelToTarget(state.currentModel, layout.modelTargetSize);
       state.currentModel.position.copy(layout.modelPosition);
-      updateAxesHelperPosition();
       updateDecal();
     }
   }
@@ -431,7 +415,6 @@ function clearDecal() {
 function clearModel() {
   if (!state.currentModel) {
     state.mainMesh = null;
-    updateAxesHelperPosition();
     return;
   }
 
@@ -439,7 +422,6 @@ function clearModel() {
   disposeObject3D(state.currentModel);
   state.currentModel = null;
   state.mainMesh = null;
-  updateAxesHelperPosition();
 }
 
 function findFirstMesh(root) {
@@ -537,18 +519,20 @@ function getDecalTransforms() {
   const depth = Math.max(1, size.x * DECAL_LAYOUT.depthRatio);
   const projectionOffset = size.x * DECAL_LAYOUT.projectionOffsetRatio;
 
-  return [
-    {
-      position: new THREE.Vector3(box.max.x + projectionOffset, baseY, baseZ),
-      rotation: DECAL_LAYOUT.sideRotations.right,
-      size: new THREE.Vector3(squareSize, squareSize, depth)
-    },
-    {
+  const transforms = [];
+  if (state.decalSides.pattern.left || state.decalSides.paint.left) transforms.push({
+      side: 'left',
       position: new THREE.Vector3(box.min.x - projectionOffset, baseY, baseZ),
       rotation: DECAL_LAYOUT.sideRotations.left,
       size: new THREE.Vector3(squareSize, squareSize, depth)
-    }
-  ];
+    });
+  if (state.decalSides.pattern.right || state.decalSides.paint.right) transforms.push({
+      side: 'right',
+      position: new THREE.Vector3(box.max.x + projectionOffset, baseY, baseZ),
+      rotation: DECAL_LAYOUT.sideRotations.right,
+      size: new THREE.Vector3(squareSize, squareSize, depth)
+    });
+  return transforms;
 }
 
 function buildDecalMaterial(paintTexture, normalTexture) {
@@ -634,13 +618,16 @@ async function updateDecal() {
   const decalGroup = new THREE.Group();
 
   getDecalTransforms().forEach((decalTransform) => {
+    const paintForSide = state.currentPaintUrl && state.decalSides.paint[decalTransform.side] ? paintTexture : null;
+    const patternForSide = state.currentPatternUrl && state.decalSides.pattern[decalTransform.side] ? normalTexture : null;
+    if (!paintForSide && !patternForSide) return;
     const decalGeometry = new DecalGeometry(
       state.mainMesh,
       decalTransform.position,
       decalTransform.rotation,
       decalTransform.size
     );
-    const decalMaterial = buildDecalMaterial(paintTexture, normalTexture);
+    const decalMaterial = buildDecalMaterial(paintForSide, patternForSide);
 
     decalGroup.add(new THREE.Mesh(decalGeometry, decalMaterial));
   });
@@ -801,10 +788,22 @@ function handlePaintButtonClick(event) {
   }
 }
 
+function handleDecalSideClick(event) {
+  const button = event.target.closest('button[data-decal-type][data-side]');
+  if (!button) return;
+  const type = button.dataset.decalType;
+  const side = button.dataset.side;
+  state.decalSides[type][side] = !state.decalSides[type][side];
+  button.classList.toggle('is-selected', state.decalSides[type][side]);
+  updateDecal();
+}
+
 document.querySelector('.model-btns')?.addEventListener('click', handleModelButtonClick);
 document.querySelector('.color-area')?.addEventListener('click', handleColorButtonClick);
 document.querySelector('.pattern-area')?.addEventListener('click', handlePatternButtonClick);
 document.querySelector('.paint-area')?.addEventListener('click', handlePaintButtonClick);
+document.querySelector('.pattern-area')?.addEventListener('click', handleDecalSideClick);
+document.querySelector('.paint-area')?.addEventListener('click', handleDecalSideClick);
 
 clearDecalButton?.addEventListener('click', () => {
   state.currentPatternUrl = null;
