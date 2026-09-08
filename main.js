@@ -741,10 +741,10 @@ function validateAndSetCapacity(value) {
   let nextValue = parsedValue;
 
   if (nextValue < CAPACITY_LIMITS.min) {
-    alert(`小心！\n超出最小容量喽～\n已自动调整为 ${CAPACITY_LIMITS.min} cc`);
+    alert(`小心！\n超出最小容量\n已自动调整为 ${CAPACITY_LIMITS.min} cc`);
     nextValue = CAPACITY_LIMITS.min;
   } else if (nextValue > CAPACITY_LIMITS.max) {
-    alert(`小心！\n超出最大容量啦～\n已自动调整为 ${CAPACITY_LIMITS.max} cc`);
+    alert(`小心！\n超出最大容量\n已自动调整为 ${CAPACITY_LIMITS.max} cc`);
     nextValue = CAPACITY_LIMITS.max;
   }
 
