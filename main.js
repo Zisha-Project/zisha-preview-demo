@@ -84,6 +84,8 @@ const state = {
   currentPaintUrl: null,
   decalSides: { pattern: { left: true, right: true }, paint: { left: true, right: true } },
   currentCapacity: 300,
+  currentColor: '#6D5B54',
+  cart: [],
   theme: document.documentElement.dataset.theme === THEMES.dark ? THEMES.dark : THEMES.light,
   modelLoadToken: 0,
   decalUpdateToken: 0,
@@ -101,6 +103,14 @@ const container = document.getElementById('viewer');
 const capacityInput = document.getElementById('capacity-input');
 const capacityDisplay = document.getElementById('capacity-display');
 const clearDecalButton = document.getElementById('clear-decal-btn');
+const currentPrice = document.getElementById('current-price');
+const cartPanel = document.getElementById('cart-panel');
+const cartItems = document.getElementById('cart-items');
+const cartEmpty = document.getElementById('cart-empty');
+const cartTotal = document.getElementById('cart-total');
+const cartCount = document.getElementById('cart-count');
+const cartFabCount = document.getElementById('cart-fab-count');
+const checkoutButton = document.getElementById('checkout-btn');
 const themeToggle = document.getElementById('theme-toggle');
 const sidebarToggle = document.getElementById('sidebar-toggle');
 const initialViewerWidth = Math.max(container.clientWidth, 1);
@@ -680,6 +690,7 @@ function changeModelColor(colorHex) {
   }
 
   const color = new THREE.Color(colorHex);
+  state.currentColor = colorHex;
   const emissiveColor = color.clone().multiplyScalar(0.2);
 
   state.currentModel.traverse((child) => {
@@ -741,10 +752,10 @@ function validateAndSetCapacity(value) {
   let nextValue = parsedValue;
 
   if (nextValue < CAPACITY_LIMITS.min) {
-    alert(`小心！\n超出最小容量\n已自动调整为 ${CAPACITY_LIMITS.min} cc`);
+    alert(`小心！\n超出最小容量喽～\n已自动调整为 ${CAPACITY_LIMITS.min} cc`);
     nextValue = CAPACITY_LIMITS.min;
   } else if (nextValue > CAPACITY_LIMITS.max) {
-    alert(`小心！\n超出最大容量\n已自动调整为 ${CAPACITY_LIMITS.max} cc`);
+    alert(`小心！\n超出最大容量啦～\n已自动调整为 ${CAPACITY_LIMITS.max} cc`);
     nextValue = CAPACITY_LIMITS.max;
   }
 
@@ -760,7 +771,9 @@ function handleModelButtonClick(event) {
   const button = event.target.closest('button[data-model]');
 
   if (button) {
+    document.querySelectorAll('.model-btns button').forEach((item) => item.classList.toggle('is-selected', item === button));
     loadModel(button.dataset.model);
+    refreshPrice();
   }
 }
 
@@ -769,7 +782,34 @@ function handleColorButtonClick(event) {
 
   if (button) {
     changeModelColor(button.dataset.color);
+    refreshPrice();
   }
+}
+
+const MODEL_NAMES = { 'models/model1.glb': '水平壶', 'models/model2.glb': '仿古壶', 'models/model3.glb': '西施壶' };
+const COLOR_NAMES = { '#6D5B54': '底槽清', '#7A6963': '原矿紫泥', '#5C6570': '天青泥', '#B85B46': '小煤窑朱泥', '#C86B55': '大红袍朱泥', '#A95C50': '红皮龙', '#C9B88F': '黄金段泥', '#A8A08D': '青段泥', '#B4A990': '芝麻段泥', '#8A9A86': '本山绿泥', '#6B7B6E': '墨绿泥' };
+function getCurrentPrice() {
+  const model = document.querySelector('.model-btns button.is-selected')?.dataset.model || DEFAULT_MODEL_URL;
+  const base = { 'models/model1.glb': 980, 'models/model2.glb': 1280, 'models/model3.glb': 1480 }[model] || 980;
+  const clay = ['#B85B46','#C86B55','#A95C50'].includes(state.currentColor) ? 180 : ['#C9B88F','#A8A08D','#B4A990'].includes(state.currentColor) ? 120 : 0;
+  const pattern = state.currentPatternUrl ? 120 : 0;
+  const paint = state.currentPaintUrl ? 260 : 0;
+  return base + clay + pattern + paint + Math.round((state.currentCapacity - 300) / 10) * 8;
+}
+function refreshPrice() { if (currentPrice) currentPrice.textContent = `¥${getCurrentPrice().toLocaleString()}`; }
+function renderCart() {
+  const count = state.cart.reduce((sum, item) => sum + item.quantity, 0);
+  const total = state.cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  cartCount.textContent = count; cartFabCount.textContent = count; cartTotal.textContent = `¥${total.toLocaleString()}`;
+  cartEmpty.hidden = state.cart.length > 0; checkoutButton.disabled = !state.cart.length;
+  cartItems.innerHTML = state.cart.map((item, i) => `<div class="cart-item"><div><strong>${item.name}</strong><small>${item.details}</small></div><div class="cart-item-actions"><b>¥${item.price.toLocaleString()}</b><button data-cart-action="minus" data-index="${i}">−</button><span>${item.quantity}</span><button data-cart-action="plus" data-index="${i}">+</button><button data-cart-action="remove" data-index="${i}">删除</button></div></div>`).join('');
+}
+function addCurrentToCart() {
+  const model = document.querySelector('.model-btns button.is-selected')?.dataset.model || DEFAULT_MODEL_URL;
+  const item = { name: MODEL_NAMES[model] || '定制紫砂壶', details: `${COLOR_NAMES[state.currentColor] || '紫泥'} · ${state.currentCapacity}cc${state.currentPatternUrl ? ' · 纹理' : ''}${state.currentPaintUrl ? ' · 彩绘' : ''}`, price: getCurrentPrice(), quantity: 1 };
+  const existing = state.cart.find((x) => x.details === item.details && x.name === item.name && x.price === item.price);
+  if (existing) existing.quantity += 1; else state.cart.push(item);
+  renderCart(); cartPanel.classList.add('is-open');
 }
 
 function handlePatternButtonClick(event) {
@@ -777,6 +817,7 @@ function handlePatternButtonClick(event) {
 
   if (button) {
     applyPattern(button.dataset.pattern);
+    refreshPrice();
   }
 }
 
@@ -785,6 +826,7 @@ function handlePaintButtonClick(event) {
 
   if (button) {
     applyPaint(button.dataset.paint);
+    refreshPrice();
   }
 }
 
@@ -804,6 +846,11 @@ document.querySelector('.pattern-area')?.addEventListener('click', handlePattern
 document.querySelector('.paint-area')?.addEventListener('click', handlePaintButtonClick);
 document.querySelector('.pattern-area')?.addEventListener('click', handleDecalSideClick);
 document.querySelector('.paint-area')?.addEventListener('click', handleDecalSideClick);
+document.getElementById('add-to-cart-btn')?.addEventListener('click', addCurrentToCart);
+document.getElementById('cart-fab')?.addEventListener('click', () => cartPanel.classList.toggle('is-open'));
+document.getElementById('cart-close')?.addEventListener('click', () => cartPanel.classList.remove('is-open'));
+cartItems?.addEventListener('click', (event) => { const button = event.target.closest('[data-cart-action]'); if (!button) return; const item = state.cart[Number(button.dataset.index)]; if (button.dataset.cartAction === 'plus') item.quantity += 1; if (button.dataset.cartAction === 'minus') item.quantity -= 1; if (button.dataset.cartAction === 'remove' || item.quantity <= 0) state.cart.splice(Number(button.dataset.index), 1); renderCart(); });
+checkoutButton?.addEventListener('click', () => { alert(`订单已提交，合计 ¥${state.cart.reduce((sum, item) => sum + item.price * item.quantity, 0).toLocaleString()}。展示 demo 中已完成下单。`); state.cart = []; renderCart(); });
 
 clearDecalButton?.addEventListener('click', () => {
   state.currentPatternUrl = null;
@@ -826,11 +873,13 @@ document.addEventListener('keydown', (event) => {
 state.sidebarCollapsed = readSidebarPreference();
 
 updateCapacityDisplay();
+currentPrice.textContent = `¥${getCurrentPrice().toLocaleString()}`;
 applyTheme(state.theme);
 syncResponsiveLayout();
 
 capacityInput.addEventListener('blur', () => {
   validateAndSetCapacity(capacityInput.value);
+  currentPrice.textContent = `¥${getCurrentPrice().toLocaleString()}`;
 });
 
 capacityInput.addEventListener('keydown', (event) => {

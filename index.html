@@ -156,9 +156,20 @@
         <input type="number" id="capacity-input" min="100" max="500" step="10" value="300" placeholder="100-500" />
         <div id="capacity-display">当前容量：300 cc</div>
       </div>
+      <div class="order-area">
+        <div class="price-row"><span>当前定制价</span><strong id="current-price">¥980</strong></div>
+        <button id="add-to-cart-btn" type="button">加入购物车</button>
+      </div>
       <hr />
     </div>
     <div id="viewer"></div>
+    <aside id="cart-panel" aria-label="购物车">
+      <div class="cart-header"><h2>购物车 <span id="cart-count">0</span></h2><button id="cart-close" type="button" aria-label="关闭购物车">×</button></div>
+      <div id="cart-items"></div>
+      <div id="cart-empty">购物车还是空的，先定制一把紫砂壶吧。</div>
+      <div class="cart-footer"><div><span>合计</span><strong id="cart-total">¥0</strong></div><button id="checkout-btn" type="button" disabled>去结算</button></div>
+    </aside>
+    <button id="cart-fab" type="button">购物车 <span id="cart-fab-count">0</span></button>
   </div>
   <script type="module" src="./main.js"></script>
 </body>
