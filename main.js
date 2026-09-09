@@ -4,6 +4,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 
 const DEFAULT_MODEL_URL = 'models/model1.glb';
+const DEFAULT_MODEL_COLOR = '#6D5B54';
 const THEME_STORAGE_KEY = 'zisha-preview-theme';
 const SIDEBAR_STORAGE_KEY = 'zisha-preview-sidebar-collapsed';
 const THEMES = {
@@ -18,48 +19,48 @@ const CAPACITY_LIMITS = {
 };
 const SCENE_LAYOUTS = {
   desktopExpanded: {
-    cameraFov: 45,
-    cameraPosition: new THREE.Vector3(16.2, 5.4, 0),
-    controlTarget: new THREE.Vector3(2.4, -0.3, 0),
-    modelPosition: new THREE.Vector3(2.7, -5, 0),
-    modelTargetSize: 12,
+    cameraFov: 43,
+    cameraPosition: new THREE.Vector3(14.5, 4.2, 0),
+    controlTarget: new THREE.Vector3(2.0, -0.35, 0),
+    modelPosition: new THREE.Vector3(2.2, -3.3, 0),
+    modelTargetSize: 7,
     frameOffset: {
       x: 0.26,
       y: 0
     },
     distanceLimits: {
-      min: 8,
-      max: 30
+      min: 7,
+      max: 28
     }
   },
   desktopCollapsed: {
-    cameraFov: 45,
-    cameraPosition: new THREE.Vector3(15, 5, 0),
-    controlTarget: new THREE.Vector3(0.35, -0.3, 0),
-    modelPosition: new THREE.Vector3(0.55, -5, 0),
-    modelTargetSize: 12,
+    cameraFov: 43,
+    cameraPosition: new THREE.Vector3(13.6, 4.1, 0),
+    controlTarget: new THREE.Vector3(0.7, -0.35, 0),
+    modelPosition: new THREE.Vector3(0.7, -3.3, 0),
+    modelTargetSize: 7,
+    frameOffset: {
+      x: 0,
+      y: 0
+    },
+    distanceLimits: {
+      min: 7,
+      max: 28
+    }
+  },
+  mobile: {
+    cameraFov: 50,
+    cameraPosition: new THREE.Vector3(12.8, 4.4, 0),
+    controlTarget: new THREE.Vector3(0, -0.45, 0),
+    modelPosition: new THREE.Vector3(0, -1.65, 0),
+    modelTargetSize: 3.2,
     frameOffset: {
       x: 0,
       y: 0
     },
     distanceLimits: {
       min: 8,
-      max: 30
-    }
-  },
-  mobile: {
-    cameraFov: 52,
-    cameraPosition: new THREE.Vector3(20.5, 6.4, 0),
-    controlTarget: new THREE.Vector3(0, -0.45, 0),
-    modelPosition: new THREE.Vector3(0, -3.2, 0),
-    modelTargetSize: 7.2,
-    frameOffset: {
-      x: 0,
-      y: 0.28
-    },
-    distanceLimits: {
-      min: 12,
-      max: 40
+      max: 28
     }
   }
 };
@@ -89,8 +90,9 @@ const state = {
   decalUpdateToken: 0,
   sidebarCollapsed: false,
   isMobileLayout: MOBILE_LAYOUT_QUERY.matches,
-  sidebarOpen: true,
-  sceneLayoutKey: MOBILE_LAYOUT_QUERY.matches ? 'mobile' : 'desktopExpanded'
+  sidebarOpen: !MOBILE_LAYOUT_QUERY.matches,
+  sceneLayoutKey: MOBILE_LAYOUT_QUERY.matches ? 'mobile' : 'desktopExpanded',
+  lastColor: DEFAULT_MODEL_COLOR
 };
 
 const textureCache = new Map();
@@ -103,6 +105,14 @@ const capacityDisplay = document.getElementById('capacity-display');
 const clearDecalButton = document.getElementById('clear-decal-btn');
 const themeToggle = document.getElementById('theme-toggle');
 const sidebarToggle = document.getElementById('sidebar-toggle');
+const sidebarActions = document.getElementById('sidebar-actions');
+const fullscreenToggle = document.createElement('button');
+fullscreenToggle.id = 'fullscreen-toggle';
+fullscreenToggle.type = 'button';
+fullscreenToggle.setAttribute('aria-label', '进入全屏编辑');
+fullscreenToggle.title = '全屏编辑';
+fullscreenToggle.innerHTML = '<span aria-hidden="true">⛶</span><span class="fullscreen-label">全屏编辑</span>';
+sidebarActions?.append(fullscreenToggle);
 const initialViewerWidth = Math.max(container.clientWidth, 1);
 const initialViewerHeight = Math.max(container.clientHeight, 1);
 const initialSceneLayout = SCENE_LAYOUTS[state.sceneLayoutKey];
@@ -142,7 +152,8 @@ const pointLight = new THREE.PointLight(0xffffff, 2);
 pointLight.position.set(10, 10, 10);
 scene.add(pointLight);
 
-scene.add(new THREE.AxesHelper(15));
+// The model is the focal point; reference axes are intentionally omitted from
+// the customer-facing preview to keep the canvas calm and legible.
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -437,6 +448,9 @@ function findFirstMesh(root) {
 }
 
 function scaleModelToTarget(model, targetSize) {
+  // Always measure from a neutral origin so repeated resize/layout updates do
+  // not compound the previous translation.
+  model.position.y = 0;
   model.scale.setScalar(1);
   const box = new THREE.Box3().setFromObject(model);
   const size = box.getSize(new THREE.Vector3());
@@ -444,6 +458,12 @@ function scaleModelToTarget(model, targetSize) {
   const scale = targetSize / maxDimension;
 
   model.scale.setScalar(scale);
+
+  // GLB files are authored with their base on y=0. Re-center after scaling so
+  // every vessel (including taller forms) sits naturally in the same frame.
+  const centeredBox = new THREE.Box3().setFromObject(model);
+  const centered = centeredBox.getCenter(new THREE.Vector3());
+  model.position.y -= centered.y;
 }
 
 function configureTexture(texture, colorSpace) {
@@ -680,6 +700,7 @@ function changeModelColor(colorHex) {
   }
 
   const color = new THREE.Color(colorHex);
+  state.lastColor = colorHex;
   const emissiveColor = color.clone().multiplyScalar(0.2);
 
   state.currentModel.traverse((child) => {
@@ -715,6 +736,7 @@ function loadModel(url) {
       state.mainMesh = findFirstMesh(model);
 
       scene.add(model);
+      changeModelColor(state.lastColor ?? DEFAULT_MODEL_COLOR);
       refreshSceneLayout({ force: true });
     },
     undefined,
@@ -813,6 +835,29 @@ clearDecalButton?.addEventListener('click', () => {
 
 sidebarToggle?.addEventListener('click', toggleSidebar);
 
+function syncFullscreenLabel() {
+  const active = document.fullscreenElement === app;
+  fullscreenToggle.setAttribute('aria-label', active ? '退出全屏编辑' : '进入全屏编辑');
+  fullscreenToggle.title = active ? '退出全屏编辑' : '全屏编辑';
+  const label = fullscreenToggle.querySelector('.fullscreen-label');
+  if (label) label.textContent = active ? '退出全屏' : '全屏编辑';
+}
+
+fullscreenToggle.addEventListener('click', async () => {
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else if (app?.requestFullscreen) await app.requestFullscreen();
+  } catch (error) {
+    console.warn('全屏模式不可用', error);
+  }
+});
+document.addEventListener('fullscreenchange', () => {
+  document.body.classList.toggle('is-fullscreen', document.fullscreenElement === app);
+  syncFullscreenLabel();
+  requestResizeSync(300);
+});
+syncFullscreenLabel();
+
 themeToggle?.addEventListener('change', (event) => {
   applyTheme(event.target.checked ? THEMES.dark : THEMES.light);
 });
@@ -900,3 +945,26 @@ sidebar?.addEventListener('transitionend', () => {
 
 animate();
 loadModel(DEFAULT_MODEL_URL);
+
+window.addEventListener('message', (event) => {
+  const message = event.data;
+  if (!message || typeof message.type !== 'string') return;
+  if (message.type === 'zisha:model' && typeof message.url === 'string') loadModel(message.url);
+  if (message.type === 'zisha:color' && typeof message.color === 'string') changeModelColor(message.color);
+  if (message.type === 'zisha:capacity') validateAndSetCapacity(message.value);
+  if (message.type === 'zisha:pattern' && typeof message.url === 'string') applyPaint(message.url);
+});
+
+// Native host pages dispatch CustomEvents instead of cross-document messages.
+window.addEventListener('zisha:model', (event) => {
+  if (event.detail?.url) loadModel(event.detail.url);
+});
+window.addEventListener('zisha:color', (event) => {
+  if (event.detail?.color) changeModelColor(event.detail.color);
+});
+window.addEventListener('zisha:capacity', (event) => {
+  if (event.detail?.value != null) validateAndSetCapacity(event.detail.value);
+});
+window.addEventListener('zisha:pattern', (event) => {
+  if (event.detail?.url) applyPaint(event.detail.url);
+});

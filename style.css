@@ -223,6 +223,31 @@ body.sidebar-collapsed:not(.is-mobile) #sidebar > * {
   margin-left: auto;
 }
 
+.workspace-page { overflow: hidden; background: var(--viewer-bg); }
+.workspace-editor { position: fixed; inset: 0; width: 100vw; height: 100dvh; }
+.workspace-editor #app { min-height: 100dvh; height: 100dvh; }
+.workspace-back { position: fixed; top: 18px; right: 22px; z-index: 60; padding: 9px 13px; border: 1px solid var(--floating-button-border); border-radius: 999px; background: var(--floating-button-bg); color: var(--text-color); font-size: 12px; text-decoration: none; box-shadow: var(--floating-button-shadow); backdrop-filter: blur(12px); }
+.workspace-back:hover { background: var(--button-hover); }
+
+#fullscreen-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 6px 9px;
+  border: 1px solid var(--button-border);
+  border-radius: 8px;
+  background: var(--button-bg);
+  color: var(--text-color);
+  cursor: pointer;
+  font-size: 12px;
+  transition: background .2s ease, transform .2s ease;
+}
+
+
+#fullscreen-toggle:hover { background: var(--button-hover); transform: translateY(-1px); }
+#fullscreen-toggle:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+
 .theme-switch {
   position: relative;
   display: inline-flex;
@@ -479,6 +504,11 @@ body.sidebar-collapsed:not(.is-mobile) #sidebar > * {
   transition: background 0.25s ease;
 }
 
+body.is-fullscreen #app { background: var(--viewer-bg); }
+body.is-fullscreen #app { width: 100vw; height: 100dvh; min-height: 100dvh; position: fixed; inset: 0; z-index: 9999; }
+body.is-fullscreen #viewer { min-height: 100dvh; }
+body.is-fullscreen #sidebar { max-width: min(360px, 88vw); }
+
 #viewer canvas {
   display: block;
   width: 100%;
@@ -648,6 +678,17 @@ body.sidebar-collapsed:not(.is-mobile) #sidebar > * {
     width: 100%;
     justify-content: flex-end;
   }
+
+  body.is-fullscreen #sidebar {
+    height: min(58dvh, 520px);
+    max-width: none;
+  }
+
+  body.is-fullscreen #sidebar-toggle {
+    bottom: calc(min(58dvh, 520px) - 1px);
+  }
+
+  .fullscreen-label { display: none; }
 
   .pattern-btn,
   .paint-btn,
