@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048" viewBox="0 0 1024 1024">
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M320 850 L320 240" stroke="#2d4a2b" stroke-width="30" />
+    <path d="M475 860 L475 190" stroke="#2f522e" stroke-width="32" />
+    <path d="M635 840 L635 285" stroke="#315a30" stroke-width="28" />
+
+    <path d="M305 700 L338 700" stroke="#20371f" stroke-width="8" />
+    <path d="M305 560 L338 560" stroke="#20371f" stroke-width="8" />
+    <path d="M305 420 L338 420" stroke="#20371f" stroke-width="8" />
+    <path d="M460 735 L492 735" stroke="#20371f" stroke-width="8" />
+    <path d="M460 585 L492 585" stroke="#20371f" stroke-width="8" />
+    <path d="M460 435 L492 435" stroke="#20371f" stroke-width="8" />
+    <path d="M620 700 L650 700" stroke="#20371f" stroke-width="8" />
+    <path d="M620 560 L650 560" stroke="#20371f" stroke-width="8" />
+    <path d="M620 420 L650 420" stroke="#20371f" stroke-width="8" />
+
+    <path d="M335 640 C405 590 470 555 545 545" stroke="#3d6b3a" stroke-width="16" />
+    <path d="M490 515 C560 470 625 448 705 442" stroke="#3d6b3a" stroke-width="16" />
+    <path d="M350 500 C420 455 485 430 565 426" stroke="#3d6b3a" stroke-width="14" />
+    <path d="M500 670 C565 635 620 621 690 622" stroke="#3d6b3a" stroke-width="14" />
+    <path d="M330 640 C255 610 210 590 155 560" stroke="#3d6b3a" stroke-width="14" />
+    <path d="M488 548 C420 520 380 500 325 468" stroke="#3d6b3a" stroke-width="12" />
+  </g>
+
+  <g fill="#9e1f1f">
+    <rect x="752" y="760" width="96" height="96" rx="8" opacity="0.9" />
+  </g>
+</svg>
