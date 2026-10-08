@@ -20,3 +20,9 @@ python3 -m http.server 8000
 - `/preview/`：紫砂壶定制预览（main 分支的 Web3D 工坊）
 
 主页上的入口全部跳转到 `/preview/`。预览页可换器型、泥色、纹样、彩绘和容量，数据只留在浏览器本地。
+
+## 模型自动发现
+
+将 GLB 文件放入 `preview/models/`，刷新页面即可在支持目录索引的本地服务器（如上述 Python 服务器）中读取全部模型。按钮名称使用文件名去掉 `.glb` 后缀，没有数量限制；模型按名称自然排序，默认展示第一个，点击按钮切换。
+
+GitHub Pages 部署时会自动扫描该文件夹并生成 `manifest.json`。使用其他不提供目录索引的静态服务器时，添加、删除或重命名模型后，先运行 `node scripts/generate-model-manifest.mjs` 再发布。仅扫描该目录直属的 GLB 文件，扩展名不区分大小写。

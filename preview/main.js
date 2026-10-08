@@ -2,8 +2,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
+import { discoverModels } from './model-catalog.js';
 
-const DEFAULT_MODEL_URL = 'models/model1.glb';
 const THEME_STORAGE_KEY = 'zisha-preview-theme';
 const SIDEBAR_STORAGE_KEY = 'zisha-preview-sidebar-collapsed';
 const THEMES = {
@@ -764,6 +764,32 @@ function handleModelButtonClick(event) {
   }
 }
 
+async function initializeModelList() {
+  const buttons = document.querySelector('.model-btns');
+  const status = document.getElementById('model-list-status');
+
+  try {
+    const models = await discoverModels(new URL('./models/', import.meta.url));
+    const fragment = document.createDocumentFragment();
+    models.forEach((model) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.model = model.url;
+      button.textContent = model.name;
+      fragment.appendChild(button);
+    });
+    buttons.replaceChildren(fragment);
+    status.textContent = models.length ? '' : 'models 文件夹中没有 GLB 模型';
+    status.hidden = models.length > 0;
+    if (models.length) loadModel(models[0].url);
+  } catch (error) {
+    status.textContent = '模型列表读取失败，请检查目录访问或模型清单';
+    console.error('模型列表读取失败', error);
+  } finally {
+    buttons.setAttribute('aria-busy', 'false');
+  }
+}
+
 function handleColorButtonClick(event) {
   const button = event.target.closest('button[data-color]');
 
@@ -899,4 +925,4 @@ sidebar?.addEventListener('transitionend', () => {
 });
 
 animate();
-loadModel(DEFAULT_MODEL_URL);
+initializeModelList();
