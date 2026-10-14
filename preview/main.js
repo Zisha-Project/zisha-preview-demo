@@ -65,11 +65,15 @@ const SCENE_LAYOUTS = {
 };
 const DECAL_LAYOUT = {
   projectionOffsetRatio: 0.08,
-  verticalCenterRatio: 0.45,
   widthRatio: 0.4,
   heightRatio: 0.4,
   depthRatio: 1.2,
-  zOffsetRatio: 0,
+  // Keep decal placement tied to the scene axes so it stays consistent when
+  // models have different bounds or are translated within the scene.
+  axisAlignment: {
+    y: 0,
+    z: 0
+  },
   sideRotations: {
     right: new THREE.Euler(0, Math.PI / 2, 0),
     left: new THREE.Euler(0, -Math.PI / 2, 0)
@@ -505,7 +509,6 @@ function getDecalTransforms() {
 
   const box = new THREE.Box3().setFromObject(state.mainMesh);
   const size = box.getSize(new THREE.Vector3());
-  const center = box.getCenter(new THREE.Vector3());
   const squareSize = Math.max(
     1,
     Math.min(
@@ -514,8 +517,8 @@ function getDecalTransforms() {
     )
   );
 
-  const baseY = box.min.y + size.y * DECAL_LAYOUT.verticalCenterRatio;
-  const baseZ = center.z + size.z * DECAL_LAYOUT.zOffsetRatio;
+  const baseY = DECAL_LAYOUT.axisAlignment.y;
+  const baseZ = DECAL_LAYOUT.axisAlignment.z;
   const depth = Math.max(1, size.x * DECAL_LAYOUT.depthRatio);
   const projectionOffset = size.x * DECAL_LAYOUT.projectionOffsetRatio;
 
